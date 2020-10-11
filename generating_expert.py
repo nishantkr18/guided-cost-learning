@@ -13,8 +13,6 @@ random.seed(seed)
 np.random.seed(seed)
 torch.manual_seed(seed)
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
 env_name = 'CartPole-v1'
 env = gym.make(env_name).unwrapped
 if seed is not None:
@@ -47,7 +45,7 @@ for i in range(100):
 torch.save(model, "experts/saved_expert/pg.model")
 #model.load("experts/saved_expert/pg.model")
 
-num_demo = 500
+num_expert = 500
 
-expert_samples = np.array([model.generate_session(env) for i in range(num_demo)])
+expert_samples = np.array([model.generate_session(env) for i in range(num_expert)])
 np.save('expert_samples/pg_cartpole', expert_samples)

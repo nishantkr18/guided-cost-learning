@@ -25,6 +25,7 @@ class PG(nn.Module):
         states = torch.FloatTensor(states)
         logits = self.model(states).detach()
         probs = F.softmax(logits, dim = -1).numpy()
+        # print(states, logits, probs)
         return probs
     
     def generate_session(self, env, t_max=1000):
