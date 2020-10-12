@@ -40,12 +40,13 @@ for i in range(100):
         plt.close()
     
     if np.mean(rewards) > 500:
+        print("TRAINED!")
         break
 
 torch.save(model, "experts/saved_expert/pg.model")
 #model.load("experts/saved_expert/pg.model")
 
-num_expert = 500
+num_expert = 100
 
 expert_samples = np.array([model.generate_session(env) for i in range(num_expert)])
 np.save('expert_samples/pg_cartpole', expert_samples)
