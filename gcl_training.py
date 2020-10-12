@@ -36,12 +36,12 @@ def guided_cost_learning(
     states_expert, actions_expert, _ = expert_traj
 
     states = torch.tensor(states, dtype=torch.float32)
-    actions = torch.tensor(actions, dtype=torch.int32)
+    actions = torch.tensor(actions, dtype=torch.float32)
     states_expert = torch.tensor(states_expert, dtype=torch.float32)
-    actions_expert = torch.tensor(actions_expert, dtype=torch.int32)
-
-    costs = cost_f(states)
-    costs_expert = cost_f(states_expert)
+    actions_expert = torch.tensor(actions_expert, dtype=torch.float32)
+    x = torch.cat((states, actions.reshape(-1, 1)), 1)
+    costs = cost_f(x)
+    costs_expert = cost_f(torch.cat((states_expert, actions_expert.reshape(-1, 1)), 1))
 
     logits = model(states)
     probs = nn.functional.softmax(logits, -1)
@@ -59,7 +59,7 @@ def guided_cost_learning(
     cost_optimizer.step()
 
     # LOSS CALCULATION FOR POLICY (PG)
-    costs = cost_f(states).detach().numpy()
+    costs = cost_f(x).detach().numpy()
     cumulative_returns = np.array(get_cumulative_rewards(-costs, gamma))
     cumulative_returns = torch.tensor(cumulative_returns, dtype=torch.float32)
     # print(cumulative_returns)

@@ -30,7 +30,7 @@ expert_samples = np.load('expert_samples/pg_cartpole.npy', allow_pickle=True)
 
 # INITILIZING POLICY AND REWARD FUNCTION
 policy = PG(state_shape, n_actions)
-cost = CostNN(state_shape)
+cost = CostNN(state_shape[0] + 1)
 model_optimizer = torch.optim.Adam(policy.parameters(), 1e-3)
 cost_optimizer = torch.optim.Adam(cost.parameters(), 1e-3)
 
