@@ -29,15 +29,18 @@ class PG(nn.Module):
         return probs
     
     def generate_session(self, env, t_max=1000):
-        states, actions, rewards = [], [], []
+        states, traj_probs, actions, rewards = [], [], [], []
         s = env.reset()
-
+        q_t = 1.0
         for t in range(t_max):
             action_probs = self.predict_probs(np.array([s]))[0]
             a = np.random.choice(self.n_actions,  p = action_probs)
             new_s, r, done, info = env.step(a)
+            
+            q_t *= action_probs[a]
 
             states.append(s)
+            traj_probs.append(q_t)
             actions.append(a)
             rewards.append(r)
 

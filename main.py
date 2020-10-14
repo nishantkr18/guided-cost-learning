@@ -47,16 +47,20 @@ sample_trajs = []
 D_demo, D_samp = np.array([]), np.array([])
 
 # CONVERTS TRAJ LIST TO STEP LIST
-def preprocess_traj(traj_list, step_list):
+def preprocess_traj(traj_list, step_list, is_Demo = False):
     step_list = step_list.tolist()
     for traj in traj_list:
         states = np.array(traj[0])
-        actions = np.array(traj[1]).reshape(-1, 1)
-        x = np.concatenate((states, actions), axis=1)
+        if is_Demo:
+            probs = np.ones((states.shape[0], 1))
+        else:
+            probs = np.array(traj[1]).reshape(-1, 1)
+        actions = np.array(traj[2]).reshape(-1, 1)
+        x = np.concatenate((states, probs, actions), axis=1)
         step_list.extend(x)
     return np.array(step_list)
 
-D_demo = preprocess_traj(demo_trajs, D_demo)
+D_demo = preprocess_traj(demo_trajs, D_demo, is_Demo=True)
 return_list, sum_of_cost_list = [], []
 for i in range(1000):
     trajs = [policy.generate_session(env) for _ in range(EPISODES_TO_PLAY)]
@@ -72,22 +76,21 @@ for i in range(1000):
         D_s_samp = D_samp[selected_samp]
         D_s_demo = D_demo[selected_demo]
 
+        #D̂ samp ← D̂ demo ∪ D̂ samp
         D_s_samp = np.concatenate((D_s_demo, D_s_samp), axis = 0)
 
-        states, actions = D_s_samp[:,:-1], D_s_samp[:,-1]
-        states_expert, actions_expert = D_s_demo[:,:-1], D_s_demo[:,-1]
+        states, probs, actions = D_s_samp[:,:-2], D_s_samp[:,-2], D_s_samp[:,-1]
+        states_expert, actions_expert = D_s_demo[:,:-2], D_s_demo[:,-1]
 
         # Reducing from float64 to float32 for making computaton faster
         states = torch.tensor(states, dtype=torch.float32)
+        probs = torch.tensor(probs, dtype=torch.float32)
         actions = torch.tensor(actions, dtype=torch.float32)
         states_expert = torch.tensor(states_expert, dtype=torch.float32)
         actions_expert = torch.tensor(actions_expert, dtype=torch.float32)
 
         costs_samp = cost_f(torch.cat((states, actions.reshape(-1, 1)), dim=-1))
         costs_demo = cost_f(torch.cat((states_expert, actions_expert.reshape(-1, 1)), dim=-1))
-
-        logits = policy(states)
-        probs = nn.functional.softmax(logits, -1)
 
         # LOSS CALCULATION FOR IOC (COST FUNCTION)
         loss_IOC = torch.mean(costs_demo) + \
